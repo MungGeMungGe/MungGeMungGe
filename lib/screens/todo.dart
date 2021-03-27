@@ -53,21 +53,11 @@ class _TodoScreenState extends State<TodoScreen> {
                 hintText: 'Add a new task',
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 10),
-                child: ListView.builder(
-                  itemCount: todos.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    return TodoItem(
-                      todo: todos[index],
-                      clickCheckbox: () => clickCheckbox(index),
-                      deleteTodo: () => deleteTodo(index),
-                      clickEditBtn: () => clickEditBtn(index),
-                    );
-                  },
-                ),
-              ),
+            TodoList(
+              todos: todos,
+              clickCheckbox: clickCheckbox,
+              deleteTodo: deleteTodo,
+              clickEditBtn: clickEditBtn,
             ),
           ],
         ),
@@ -75,14 +65,21 @@ class _TodoScreenState extends State<TodoScreen> {
     );
   }
 
+  // Text Field 'Enter' 입력 시
   submitText(String text) {
     if (text.isEmpty == true) { return; }
 
+    // 현재 할일 수정 중인 경우
     if (editingTodoIndex != null) {
-      editText(text);
+      editTodo(text);
       return;
     }
 
+    addTodo(text);
+  }
+
+  // 새로운 할일 추가
+  addTodo(String text) {
     Todo todo = Todo(content: text);
     setState(() {
       todos.add(todo);
@@ -90,7 +87,8 @@ class _TodoScreenState extends State<TodoScreen> {
     });
   }
 
-  editText(String text) {
+  // 할일 수정
+  editTodo(String text) {
     setState(() {
       todos[editingTodoIndex!].content = text;
       editingTodoIndex = null;
@@ -98,27 +96,67 @@ class _TodoScreenState extends State<TodoScreen> {
     });
   }
 
+  // 할일 완료 Checkbox Click
   clickCheckbox(int index) {
     setState(() {
       todos[index].isDone = !todos[index].isDone;
     });
   }
 
+  // 할일 삭제
   deleteTodo(int index) {
     setState(() {
       todos.removeAt(index);
     });
   }
-  
+
+  // 할일 수정 버튼 클릭 시
   clickEditBtn(int index) {
-    editingTodoIndex = index;
-    _focusNode.requestFocus();
+    setState(() {
+      editingTodoIndex = index;
+      _focusNode.requestFocus();
+    });
     Future.delayed(
       Duration(microseconds: 500),
       () { _controller.text = todos[index].content; }
     );
   }
 }
+
+class TodoList extends StatelessWidget {
+  final List<Todo> todos;
+  final void Function(int index) clickCheckbox;
+  final void Function(int index) deleteTodo;
+  final void Function(int index) clickEditBtn;
+
+  TodoList({
+    required this.todos,
+    required this.clickCheckbox,
+    required this.deleteTodo,
+    required this.clickEditBtn,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 10),
+        child: ListView.builder(
+          itemCount: todos.length,
+          itemBuilder: (BuildContext context, int index) {
+            return TodoItem(
+              todo: todos[index],
+              clickCheckbox: () => clickCheckbox(index),
+              deleteTodo: () => deleteTodo(index),
+              clickEditBtn: () => clickEditBtn(index),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
 
 class TodoItem extends StatelessWidget {
   Todo todo;
