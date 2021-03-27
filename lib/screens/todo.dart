@@ -46,15 +46,14 @@ class _TodoScreenState extends State<TodoScreen> {
           ),
           Expanded(
             child: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              padding: EdgeInsets.symmetric(vertical: 10),
               child: ListView.builder(
                 itemCount: todos.length,
                 itemBuilder: (BuildContext context, int index) {
                   return TodoItem(
                     todo: todos[index],
-                    clickCheckbox: () {
-                      clickCheckbox(index);
-                    },
+                    clickCheckbox: () => clickCheckbox(index),
+                    deleteTodo: () => deleteTodo(index),
                   );
                 },
               ),
@@ -70,46 +69,66 @@ class _TodoScreenState extends State<TodoScreen> {
       todos[index].isDone = !todos[index].isDone;
     });
   }
+
+  deleteTodo (int index) {
+    setState(() {
+      todos.removeAt(index);
+    });
+  }
 }
 
 class TodoItem extends StatelessWidget {
   Todo todo;
   VoidCallback clickCheckbox;
+  VoidCallback deleteTodo;
   
   TodoItem({
     required this.todo,
-    required this.clickCheckbox
+    required this.clickCheckbox,
+    required this.deleteTodo,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 5.0),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.black.withOpacity(0.5)
-          )
-        )
-      ),
-      child: Row(
-        children: <Widget>[
-          Checkbox(
-            value: todo.isDone,
-            activeColor: Colors.grey,
-            onChanged: (event) {
-              clickCheckbox();
-            },
-          ),
-          Text(
-            todo.content,
-            style: TextStyle(
-              fontSize: 16.0,
-              decoration: todo.isDone ? TextDecoration.lineThrough : TextDecoration.none,
+    return Dismissible(
+      key: UniqueKey(),
+      onDismissed: (direction) {
+        deleteTodo();
+      },
+      child: ListTile(
+        title: Container(
+          padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 5.0),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.black.withOpacity(0.5),
+              ),
             ),
           ),
-        ],
-      )
+          child: Row(
+            children: <Widget>[
+              Checkbox(
+                value: todo.isDone,
+                activeColor: Colors.grey,
+                onChanged: (event) {
+                  clickCheckbox();
+                },
+              ),
+              Text(
+                todo.content,
+                style: TextStyle(
+                  fontSize: 16.0,
+                  decoration: todo.isDone ? TextDecoration.lineThrough : TextDecoration.none,
+                ),
+              ),
+              Spacer(),
+              GestureDetector(
+                child: Icon(Icons.edit),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
