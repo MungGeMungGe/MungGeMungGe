@@ -9,16 +9,20 @@ class TodoScreen extends StatefulWidget {
 class _TodoScreenState extends State<TodoScreen> {
   List<Todo> todos = [];
   late TextEditingController _controller;
+  late FocusNode _focusNode;
+  int? editingTodoIndex; // 수정 중인 Todo의 index
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController();
+    _focusNode = FocusNode();
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -28,40 +32,70 @@ class _TodoScreenState extends State<TodoScreen> {
       appBar: AppBar(
         title: Text('TODO'),
       ),
-      body: Column(
-        children: <Widget>[
-          TextField(
-            controller: _controller,
-            onSubmitted: (text) {
-              Todo todo = Todo(content: text);
-              setState(() {
-                todos.add(todo);
-                _controller.clear();
-              });
-            },
-            decoration: InputDecoration(
-              contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
-              hintText: 'Add a new task'
-            ),
-          ),
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.symmetric(vertical: 10),
-              child: ListView.builder(
-                itemCount: todos.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return TodoItem(
-                    todo: todos[index],
-                    clickCheckbox: () => clickCheckbox(index),
-                    deleteTodo: () => deleteTodo(index),
-                  );
-                },
+      body: GestureDetector(
+        onTap: () {
+          if (_focusNode.hasFocus) {
+            _focusNode.unfocus();
+          }
+          if (editingTodoIndex != null) {
+            editingTodoIndex = null;
+            _controller.text = '';
+          }
+        },
+        child: Column(
+          children: <Widget>[
+            TextField(
+              controller: _controller,
+              focusNode: _focusNode,
+              onSubmitted: (text) => submitText(text),
+              decoration: InputDecoration(
+                contentPadding: EdgeInsets.symmetric(horizontal: 10.0),
+                hintText: 'Add a new task',
               ),
             ),
-          ),
-        ],
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 10),
+                child: ListView.builder(
+                  itemCount: todos.length,
+                  itemBuilder: (BuildContext context, int index) {
+                    return TodoItem(
+                      todo: todos[index],
+                      clickCheckbox: () => clickCheckbox(index),
+                      deleteTodo: () => deleteTodo(index),
+                      clickEditBtn: () => clickEditBtn(index),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
+  }
+
+  submitText(String text) {
+    if (text.isEmpty == true) { return; }
+
+    if (editingTodoIndex != null) {
+      editText(text);
+      return;
+    }
+
+    Todo todo = Todo(content: text);
+    setState(() {
+      todos.add(todo);
+      _controller.clear();
+    });
+  }
+
+  editText(String text) {
+    setState(() {
+      todos[editingTodoIndex!].content = text;
+      editingTodoIndex = null;
+      _controller.text = '';
+    });
   }
 
   clickCheckbox(int index) {
@@ -70,10 +104,19 @@ class _TodoScreenState extends State<TodoScreen> {
     });
   }
 
-  deleteTodo (int index) {
+  deleteTodo(int index) {
     setState(() {
       todos.removeAt(index);
     });
+  }
+  
+  clickEditBtn(int index) {
+    editingTodoIndex = index;
+    _focusNode.requestFocus();
+    Future.delayed(
+      Duration(microseconds: 500),
+      () { _controller.text = todos[index].content; }
+    );
   }
 }
 
@@ -81,11 +124,13 @@ class TodoItem extends StatelessWidget {
   Todo todo;
   VoidCallback clickCheckbox;
   VoidCallback deleteTodo;
+  VoidCallback clickEditBtn;
   
   TodoItem({
     required this.todo,
     required this.clickCheckbox,
     required this.deleteTodo,
+    required this.clickEditBtn,
   });
 
   @override
@@ -123,7 +168,11 @@ class TodoItem extends StatelessWidget {
               ),
               Spacer(),
               GestureDetector(
-                child: Icon(Icons.edit),
+                child: Icon(
+                  Icons.edit,
+                  color: Theme.of(context).primaryColor,
+                ),
+                onTap: () => clickEditBtn(),
               ),
             ],
           ),
