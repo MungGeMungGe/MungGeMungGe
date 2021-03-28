@@ -38,8 +38,7 @@ class _TodoScreenState extends State<TodoScreen> {
             _focusNode.unfocus();
           }
           if (editingTodoIndex != null) {
-            editingTodoIndex = null;
-            _controller.text = '';
+            cancelEditTodo();
           }
         },
         child: Column(
@@ -58,11 +57,22 @@ class _TodoScreenState extends State<TodoScreen> {
               clickCheckbox: clickCheckbox,
               deleteTodo: deleteTodo,
               clickEditBtn: clickEditBtn,
+              onReorderTodoList: reorderTodos,
             ),
           ],
         ),
       ),
     );
+  }
+
+  reorderTodos(int oldIndex, int newIndex) {
+    setState(() {
+      if (oldIndex < newIndex) {
+        newIndex -= 1;
+      }
+      final Todo todo = todos.removeAt(oldIndex);
+      todos.insert(newIndex, todo);
+    });
   }
 
   // Text Field 'Enter' 입력 시
@@ -91,9 +101,8 @@ class _TodoScreenState extends State<TodoScreen> {
   editTodo(String text) {
     setState(() {
       todos[editingTodoIndex!].content = text;
-      editingTodoIndex = null;
-      _controller.text = '';
     });
+    cancelEditTodo();
   }
 
   // 할일 완료 Checkbox Click
@@ -121,6 +130,14 @@ class _TodoScreenState extends State<TodoScreen> {
       () { _controller.text = todos[index].content; }
     );
   }
+
+  // 할일 수정 취
+  cancelEditTodo() {
+    setState(() {
+      editingTodoIndex = null;
+      _controller.text = '';
+    });
+  }
 }
 
 class TodoList extends StatelessWidget {
@@ -128,12 +145,14 @@ class TodoList extends StatelessWidget {
   final void Function(int index) clickCheckbox;
   final void Function(int index) deleteTodo;
   final void Function(int index) clickEditBtn;
+  final void Function(int oldIndex, int newIndex) onReorderTodoList;
 
   TodoList({
     required this.todos,
     required this.clickCheckbox,
     required this.deleteTodo,
     required this.clickEditBtn,
+    required this.onReorderTodoList,
   });
 
   @override
@@ -141,16 +160,18 @@ class TodoList extends StatelessWidget {
     return Expanded(
       child: Padding(
         padding: EdgeInsets.symmetric(vertical: 10),
-        child: ListView.builder(
-          itemCount: todos.length,
-          itemBuilder: (BuildContext context, int index) {
-            return TodoItem(
-              todo: todos[index],
-              clickCheckbox: () => clickCheckbox(index),
-              deleteTodo: () => deleteTodo(index),
-              clickEditBtn: () => clickEditBtn(index),
-            );
-          },
+        child: ReorderableListView(
+          onReorder: this.onReorderTodoList,
+          children: <Widget>[
+            for (int index = 0; index < todos.length; index++)
+              TodoItem(
+                key: ValueKey(todos[index]),
+                todo: todos[index],
+                clickCheckbox: () => clickCheckbox(index),
+                deleteTodo: () => deleteTodo(index),
+                clickEditBtn: () => clickEditBtn(index),
+              ),
+          ],
         ),
       ),
     );
@@ -165,11 +186,12 @@ class TodoItem extends StatelessWidget {
   VoidCallback clickEditBtn;
   
   TodoItem({
+    Key? key,
     required this.todo,
     required this.clickCheckbox,
     required this.deleteTodo,
     required this.clickEditBtn,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -179,8 +201,14 @@ class TodoItem extends StatelessWidget {
         deleteTodo();
       },
       child: ListTile(
+        key: UniqueKey(),
         title: Container(
-          padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 5.0),
+          padding: EdgeInsets.only(
+            top: 10.0,
+            bottom: 10.0,
+            left: 5.0,
+            right: 20.0
+          ),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -193,9 +221,7 @@ class TodoItem extends StatelessWidget {
               Checkbox(
                 value: todo.isDone,
                 activeColor: Colors.grey,
-                onChanged: (event) {
-                  clickCheckbox();
-                },
+                onChanged: (event) => clickCheckbox(),
               ),
               Text(
                 todo.content,
@@ -210,7 +236,7 @@ class TodoItem extends StatelessWidget {
                   Icons.edit,
                   color: Theme.of(context).primaryColor,
                 ),
-                onTap: () => clickEditBtn(),
+                onTap: clickEditBtn,
               ),
             ],
           ),
