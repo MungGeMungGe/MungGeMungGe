@@ -7,10 +7,10 @@ class TodoScreen extends StatefulWidget {
 }
 
 class _TodoScreenState extends State<TodoScreen> {
-  List<Todo> todos = [];
-  late TextEditingController _controller;
-  late FocusNode _focusNode;
-  int? editingTodoIndex; // 수정 중인 Todo의 index
+  List<Todo> _todos = []; // 할일 리스트
+  late TextEditingController _controller; // 할일 입력 TextField Controller
+  late FocusNode _focusNode; // 할일 입력 TextField FocusNode
+  int? editingTodoIndex; // 수정 중인 할의 index
 
   @override
   void initState() {
@@ -33,8 +33,8 @@ class _TodoScreenState extends State<TodoScreen> {
         title: Text('TODO'),
       ),
       body: GestureDetector(
-        onTap: () {
-          if (_focusNode.hasFocus) {
+        onTap: () { // 키보드 외 다른 화면 터치 시
+          if (_focusNode.hasFocus) { // 키보드가 내려가는 작업
             _focusNode.unfocus();
           }
           if (editingTodoIndex != null) {
@@ -53,7 +53,7 @@ class _TodoScreenState extends State<TodoScreen> {
               ),
             ),
             TodoList(
-              todos: todos,
+              todos: _todos,
               clickCheckbox: clickCheckbox,
               deleteTodo: deleteTodo,
               clickEditBtn: clickEditBtn,
@@ -65,13 +65,14 @@ class _TodoScreenState extends State<TodoScreen> {
     );
   }
 
+  // 할일 List Reorder 시 호출
   reorderTodos(int oldIndex, int newIndex) {
     setState(() {
       if (oldIndex < newIndex) {
         newIndex -= 1;
       }
-      final Todo todo = todos.removeAt(oldIndex);
-      todos.insert(newIndex, todo);
+      final Todo todo = _todos.removeAt(oldIndex);
+      _todos.insert(newIndex, todo);
     });
   }
 
@@ -92,7 +93,7 @@ class _TodoScreenState extends State<TodoScreen> {
   addTodo(String text) {
     Todo todo = Todo(content: text);
     setState(() {
-      todos.add(todo);
+      _todos.add(todo);
       _controller.clear();
     });
   }
@@ -100,7 +101,7 @@ class _TodoScreenState extends State<TodoScreen> {
   // 할일 수정
   editTodo(String text) {
     setState(() {
-      todos[editingTodoIndex!].content = text;
+      _todos[editingTodoIndex!].content = text;
     });
     cancelEditTodo();
   }
@@ -108,14 +109,14 @@ class _TodoScreenState extends State<TodoScreen> {
   // 할일 완료 Checkbox Click
   clickCheckbox(int index) {
     setState(() {
-      todos[index].isDone = !todos[index].isDone;
+      _todos[index].isDone = !_todos[index].isDone;
     });
   }
 
   // 할일 삭제
   deleteTodo(int index) {
     setState(() {
-      todos.removeAt(index);
+      _todos.removeAt(index);
     });
   }
 
@@ -127,7 +128,10 @@ class _TodoScreenState extends State<TodoScreen> {
     });
     Future.delayed(
       Duration(microseconds: 500),
-      () { _controller.text = todos[index].content; }
+      () {
+        _controller.text = _todos[index].content;
+        _controller.selection = TextSelection.fromPosition(TextPosition(offset: _controller.text.length));
+      }
     );
   }
 
