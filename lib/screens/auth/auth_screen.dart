@@ -1,25 +1,35 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:provider/provider.dart';
 import 'package:mung_ge_mung_ge/providers/auth_provider.dart';
 import 'package:mung_ge_mung_ge/models/logInData.dart';
 
-class AuthScreen extends StatefulWidget {
-
-  //final signInModelProvider = ChangeNotifierProvider<LogInController>();
-
+class AuthScreen extends StatelessWidget {
   @override
-  _AuthScreenState createState() => _AuthScreenState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (BuildContext context) => LogInController(auth: FirebaseAuth.instance),
+      child: AuthScreenContent(),
+    );
+  }
 }
 
-class _AuthScreenState extends State<AuthScreen> {
-  GlobalKey<FormState> _key = new GlobalKey();
+class AuthScreenContent extends StatefulWidget {
+
+  @override
+  _AuthScreenContentState createState() => _AuthScreenContentState();
+}
+
+class _AuthScreenContentState extends State<AuthScreenContent> {
+  final GlobalKey<FormState> _key = new GlobalKey();
   bool _validate = false;
-  LoginRequestData _loginData = LoginRequestData();
+  final LoginRequestData _loginData = LoginRequestData();
   bool _obscureText = true;
 
   @override
   Widget build(BuildContext context) {
+    LogInController _logInModel = Provider.of<LogInController>(context);
+
     return new Scaffold(
       body: new Center(
         child: new SingleChildScrollView(
@@ -28,7 +38,7 @@ class _AuthScreenState extends State<AuthScreen> {
             child: Center(
               child: new Form(
                 key: _key,
-                child: _getFormUI(),
+                child: _getFormUI(_logInModel),
               ),
             ),
           ),
@@ -37,9 +47,7 @@ class _AuthScreenState extends State<AuthScreen> {
     );
   }
 
-
-
-  Widget _getFormUI() {
+  Widget _getFormUI(LogInController _logInModel) {
     return new Column(
       children: <Widget>[
         Icon(
@@ -74,9 +82,7 @@ class _AuthScreenState extends State<AuthScreen> {
               OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
               suffixIcon: GestureDetector(
                 onTap: () {
-                  setState(() {
-                    _obscureText = !_obscureText;
-                  });
+                  _obscureText = !_obscureText;
                 },
                 child: Icon(
                   _obscureText ? Icons.visibility : Icons.visibility_off,
@@ -112,12 +118,16 @@ class _AuthScreenState extends State<AuthScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             InkWell(
-              child: Icon(Icons.ac_unit),
-              onTap: (){},
+              child: Image.asset("assets/auth/google.png"),
+              onTap: () async{
+                await _logInModel.signInWithGoogle();
+              },
             ),
             InkWell(
-              child: Icon(Icons.ac_unit),
-              onTap: (){},
+              child: Image.asset("assets/auth/apple.png"),
+              onTap: () async{
+                await _logInModel.signInWithApple();
+              },
             ),
             InkWell(
               child: Icon(Icons.ac_unit),
@@ -135,15 +145,11 @@ class _AuthScreenState extends State<AuthScreen> {
 
   _sendToServer() {
     if (_key.currentState!.validate()) {
-      /// No any error in validation
       _key.currentState!.save();
       print("Email ${_loginData.email}");
       print("Password ${_loginData.password}");
     } else {
-      ///validation error
-      setState(() {
-        _validate = true;
-      });
+      _validate = true;
     }
   }
 }

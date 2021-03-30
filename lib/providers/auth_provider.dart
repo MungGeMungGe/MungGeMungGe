@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:mung_ge_mung_ge/models/logInData.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 
 class LogInController with ChangeNotifier {
   LogInController({required this.auth});
 
-  final FirebaseAuth auth;
+  FirebaseAuth auth;
   dynamic error;
 
   Future<void> _logIn(String method, dynamic token) async{
@@ -17,6 +18,10 @@ class LogInController with ChangeNotifier {
        // case "self" :
         case "google":
           auth.signInWithCredential(token);
+          break;
+        case "apple":
+          auth.signInWithCredential(token);
+          break;
       }
     } catch (e) {
       error = e;
@@ -30,9 +35,7 @@ class LogInController with ChangeNotifier {
     try {
       var result = await auth.signInWithEmailAndPassword(
           email: logInData.email, password: logInData.password);
-      if(result != null) {
-        
-      }
+
     } catch(e) {
 
     }
@@ -61,6 +64,19 @@ class LogInController with ChangeNotifier {
     }
   }
 
+  Future<void> signInWithApple() async {
+    try {
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+          scopes: [AppleIDAuthorizationScopes.email]);
+      final tokenCredential = OAuthProvider('apple.com').credential(
+          accessToken: appleCredential.authorizationCode,
+          idToken: appleCredential.identityToken);
+      _logIn("apple", tokenCredential);
+    } catch (e) {
+      print(e);
+    } finally {
+    }
+  }
 
 
 }
