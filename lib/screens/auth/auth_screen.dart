@@ -77,7 +77,7 @@ class _AuthScreenContentState extends State<AuthScreenContent> {
             keyboardType: TextInputType.text,
             decoration: InputDecoration(
               hintText: 'Password',
-              contentPadding: EdgeInsets.fromLTRB(20.0, 10.0, 20.0, 10.0),
+              contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
               border:
               OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
               suffixIcon: GestureDetector(
@@ -153,5 +153,4 @@ class _AuthScreenContentState extends State<AuthScreenContent> {
     }
   }
 }
-
 
