@@ -31,17 +31,6 @@ class LogInController with ChangeNotifier {
     }
   }
 
-  Future<void> signInWithSelf(LoginRequestData logInData) async{
-    try {
-      var result = await auth.signInWithEmailAndPassword(
-          email: logInData.email, password: logInData.password);
-
-    } catch(e) {
-
-    }
-  }
-
-
   Future<void> signInWithGoogle() async {
     try {
       final GoogleSignIn googleSignIn = GoogleSignIn();
