@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:mung_ge_mung_ge/providers/auth_provider.dart';
 import 'package:mung_ge_mung_ge/models/logInData.dart';
+import 'package:email_validator/email_validator.dart';
 
 class AuthScreen extends StatelessWidget {
   @override
@@ -22,9 +23,8 @@ class AuthScreenContent extends StatefulWidget {
 
 class _AuthScreenContentState extends State<AuthScreenContent> {
   final GlobalKey<FormState> _key = new GlobalKey();
-  bool _validate = false;
   final LoginRequestData _loginData = LoginRequestData();
-  bool _obscureText = true;
+  final FirebaseAuth fAuth = FirebaseAuth.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -47,15 +47,33 @@ class _AuthScreenContentState extends State<AuthScreenContent> {
     );
   }
 
+
   Widget _getFormUI(LogInController _logInModel) {
-    return new Column(
+    return  Column(
       children: <Widget>[
-        Icon(
-          Icons.cloud_circle_outlined,
-          color: Colors.lightBlue,
-          size: 150.0,
-        ),
-        new SizedBox(height: 50.0),
+        renderLogo(),
+        SizedBox(height: 50.0),
+        renderAuthField(),
+        SizedBox(height: 15.0),
+        renderLogInButton(),
+        renderRegisterButton(),
+        SizedBox(height: 15.0),
+        renderSocialLogIn(_logInModel),
+      ],
+    );
+  }
+
+  renderLogo() {
+    return Icon(
+      Icons.cloud_circle_outlined,
+      color: Colors.lightBlue,
+      size: 150.0,
+    );
+  }
+
+  renderAuthField() {
+    return Column(
+      children: <Widget>[
         new TextFormField(
           keyboardType: TextInputType.emailAddress,
           autofocus: false,
@@ -65,75 +83,75 @@ class _AuthScreenContentState extends State<AuthScreenContent> {
             border:
             OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
           ),
-          //validator: FormValidator().validateEmail,
+          validator: (String? value) {
+            if(value!.isNotEmpty && !EmailValidator.validate(value))
+              return "이메일을 확인 후 다시 입력해 주세요.";
+            return null;
+        },
           onSaved: (String? value) {
-            _loginData.email = value!;
+            _loginData.setEmail(value!);
           },
         ),
         new SizedBox(height: 20.0),
         new TextFormField(
             autofocus: false,
-            obscureText: _obscureText,
+            obscureText: true,
             keyboardType: TextInputType.text,
             decoration: InputDecoration(
               hintText: 'Password',
               contentPadding: EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
               border:
               OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
-              suffixIcon: GestureDetector(
-                onTap: () {
-                  _obscureText = !_obscureText;
-                },
-                child: Icon(
-                  _obscureText ? Icons.visibility : Icons.visibility_off,
-                  semanticLabel:
-                  _obscureText ? 'show password' : 'hide password',
-                ),
-              ),
             ),
-            //validator: FormValidator().validatePassword,
             onSaved: (String? value) {
-              _loginData.password = value!;
+              _loginData.setPassword(value!);
             }),
-        new SizedBox(height: 15.0),
-        new Padding(
-          padding: EdgeInsets.symmetric(vertical: 16.0),
-          child: ElevatedButton(
-            child: Text('Log In', style: TextStyle(color: Colors.white)),
-            style: TextButton.styleFrom(
-              //ElevatedButton.styleFrom 에는 backgroundColor 속성이 없음
-              backgroundColor: Colors.lightBlue,
-              shape: StadiumBorder(),
-            ),
-            onPressed: (){},
-          ),
+      ],
+    );
+  }
+
+  renderLogInButton() {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 16.0),
+      child: ElevatedButton(
+        child: Text('Log In', style: TextStyle(color: Colors.white)),
+        style: TextButton.styleFrom(
+          //ElevatedButton.styleFrom 에는 backgroundColor 속성이 없음
+          backgroundColor: Colors.lightBlue,
+          shape: StadiumBorder(),
         ),
-        new TextButton(
-          onPressed: _sendToRegisterPage,
-          child: Text('Not a member? Sign up now',
-              style: TextStyle(color: Colors.black54)),
+        onPressed: _sendToServer,
+      ),
+    );
+  }
+
+  renderRegisterButton() {
+    return TextButton(
+      onPressed: _sendToRegisterPage,
+      child: Text('Not a member? Sign up now',
+          style: TextStyle(color: Colors.black54)),
+    );
+  }
+
+  renderSocialLogIn(LogInController _logInModel) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        InkWell(
+          child: Image.asset("assets/auth/google.png"),
+          onTap: () async{
+            await _logInModel.signInWithGoogle();
+          },
         ),
-        new SizedBox(height: 15.0),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            InkWell(
-              child: Image.asset("assets/auth/google.png"),
-              onTap: () async{
-                await _logInModel.signInWithGoogle();
-              },
-            ),
-            InkWell(
-              child: Image.asset("assets/auth/apple.png"),
-              onTap: () async{
-                await _logInModel.signInWithApple();
-              },
-            ),
-            InkWell(
-              child: Icon(Icons.ac_unit),
-              onTap: (){},
-            )
-          ],
+        InkWell(
+          child: Image.asset("assets/auth/apple.png"),
+          onTap: () async{
+            await _logInModel.signInWithApple();
+          },
+        ),
+        InkWell(
+          child: Icon(Icons.ac_unit),
+          onTap: (){},
         )
       ],
     );
@@ -143,13 +161,17 @@ class _AuthScreenContentState extends State<AuthScreenContent> {
     ///Go to register page
   }
 
-  _sendToServer() {
+  _sendToServer() async{
     if (_key.currentState!.validate()) {
       _key.currentState!.save();
-      print("Email ${_loginData.email}");
-      print("Password ${_loginData.password}");
-    } else {
-      _validate = true;
+      try {
+        await fAuth.signInWithEmailAndPassword(
+            email: _loginData.email, password: _loginData.password);
+          return true;
+      } on Exception catch (e) {
+        print(e);
+        return false;
+      }
     }
   }
 }
