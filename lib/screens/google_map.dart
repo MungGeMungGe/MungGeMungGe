@@ -10,8 +10,8 @@ class MyGoogleMap extends StatefulWidget {
 }
 
 class _MyGoogleMapState extends State<MyGoogleMap> {
-  Future<Position> currentPosition;
-  Future<BitmapDescriptor> bitmapDescriptor;
+  Future<Position>? currentPosition;
+  Future<BitmapDescriptor>? bitmapDescriptor;
   Map<MarkerId, Marker> markers = {};
 
   @override
@@ -54,11 +54,11 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
         ),
         body: Center(
           child: FutureBuilder(
-            future: Future.wait([currentPosition, bitmapDescriptor]),
+            future: Future.wait([currentPosition!, bitmapDescriptor!]),
             builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
               if (snapshot.hasData) {
-                Position currentPosition = snapshot.data[0];
-                BitmapDescriptor bitmapDescriptor = snapshot.data[1];
+                Position currentPosition = snapshot.data?[0];
+                BitmapDescriptor bitmapDescriptor = snapshot.data?[1];
                 LatLng currentLatlng = LatLng(currentPosition.latitude, currentPosition.longitude);
                 LatLng smokingArea1Latlng = LatLng(currentPosition.latitude + (Random().nextInt(5) * 0.001), currentPosition.longitude + (Random().nextInt(5) * 0.001)); //TODO: 위치는 추후 데이터베이스 값으로 교체
                 LatLng smokingArea2Latlng = LatLng(currentPosition.latitude + (Random().nextInt(5) * 0.001), currentPosition.longitude + (Random().nextInt(5) * 0.001));
@@ -85,20 +85,20 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
 
 class MarkerGenerator {
   final _markerSize;
-  double _circleStrokeWidth;
-  double _circleOffset;
-  double _outlineCircleWidth;
-  double _fillCircleWidth;
-  double _iconSize;
-  double _iconOffset;
+  double? _circleStrokeWidth;
+  double? _circleOffset;
+  double? _outlineCircleWidth;
+  double? _fillCircleWidth;
+  double? _iconSize;
+  double? _iconOffset;
 
   MarkerGenerator(this._markerSize) {
     // calculate marker dimensions
     _circleStrokeWidth = _markerSize / 10.0;
     _circleOffset = _markerSize / 2;
-    _outlineCircleWidth = _circleOffset - (_circleStrokeWidth / 2);
+    _outlineCircleWidth = _circleOffset! - (_circleStrokeWidth! / 2);
     _fillCircleWidth = _markerSize / 2;
-    final outlineCircleInnerWidth = _markerSize - (2 * _circleStrokeWidth);
+    final outlineCircleInnerWidth = _markerSize - (2 * _circleStrokeWidth!);
     _iconSize = sqrt(pow(outlineCircleInnerWidth, 2) / 2);
     final rectDiagonal = sqrt(2 * pow(_markerSize, 2));
     final circleDistanceToCorners = (rectDiagonal - outlineCircleInnerWidth) / 2;
@@ -118,7 +118,7 @@ class MarkerGenerator {
     final image = await picture.toImage(_markerSize.round(), _markerSize.round());
     final bytes = await image.toByteData(format: ImageByteFormat.png);
 
-    return BitmapDescriptor.fromBytes(bytes.buffer.asUint8List());
+    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
   }
 
   /// Paints the icon background
@@ -126,7 +126,7 @@ class MarkerGenerator {
     final paint = Paint()
       ..style = PaintingStyle.fill
       ..color = color;
-    canvas.drawCircle(Offset(_circleOffset, _circleOffset), _fillCircleWidth, paint);
+    canvas.drawCircle(Offset(_circleOffset!, _circleOffset!), _fillCircleWidth!, paint);
   }
 
   /// Paints a circle around the icon
@@ -134,8 +134,8 @@ class MarkerGenerator {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..color = color
-      ..strokeWidth = _circleStrokeWidth;
-    canvas.drawCircle(Offset(_circleOffset, _circleOffset), _outlineCircleWidth, paint);
+      ..strokeWidth = _circleStrokeWidth!;
+    canvas.drawCircle(Offset(_circleOffset!, _circleOffset!), _outlineCircleWidth!, paint);
   }
 
   /// Paints the icon
@@ -151,6 +151,6 @@ class MarkerGenerator {
         )
     );
     textPainter.layout();
-    textPainter.paint(canvas, Offset(_iconOffset, _iconOffset));
+    textPainter.paint(canvas, Offset(_iconOffset!, _iconOffset!));
   }
 }
