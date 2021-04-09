@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:mung_ge_mung_ge/models/logInData.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
-
 
 class LogInController with ChangeNotifier {
   LogInController({required this.auth});

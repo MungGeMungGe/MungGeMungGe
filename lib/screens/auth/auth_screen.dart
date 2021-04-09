@@ -24,7 +24,7 @@ class AuthScreenContent extends StatefulWidget {
 class _AuthScreenContentState extends State<AuthScreenContent> {
   final GlobalKey<FormState> _key = new GlobalKey();
   final LoginRequestData _loginData = LoginRequestData();
-  final FirebaseAuth fAuth = FirebaseAuth.instance;
+  final FirebaseAuth fAuth = FirebaseAuth.instance; //프로바이더로 생성
 
   @override
   Widget build(BuildContext context) {
@@ -167,10 +167,8 @@ class _AuthScreenContentState extends State<AuthScreenContent> {
       try {
         await fAuth.signInWithEmailAndPassword(
             email: _loginData.email, password: _loginData.password);
-          return true;
       } on Exception catch (e) {
         print(e);
-        return false;
       }
     }
   }
