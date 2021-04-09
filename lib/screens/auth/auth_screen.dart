@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mung_ge_mung_ge/screens/auth/register_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:mung_ge_mung_ge/providers/auth_provider.dart';
 import 'package:mung_ge_mung_ge/models/logInData.dart';
@@ -127,7 +128,10 @@ class _AuthScreenContentState extends State<AuthScreenContent> {
 
   renderRegisterButton() {
     return TextButton(
-      onPressed: _sendToRegisterPage,
+      onPressed: () {
+        Navigator.push(context, MaterialPageRoute(
+            builder: (context) => RegisterScreen()));
+      },
       child: Text('Not a member? Sign up now',
           style: TextStyle(color: Colors.black54)),
     );
@@ -155,10 +159,6 @@ class _AuthScreenContentState extends State<AuthScreenContent> {
         )
       ],
     );
-  }
-
-  _sendToRegisterPage() {
-    ///Go to register page
   }
 
   _sendToServer() async{

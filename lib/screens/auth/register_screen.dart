@@ -16,8 +16,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return new Scaffold(
-      body: new Center(
-        child: new SingleChildScrollView(
+      appBar: AppBar(
+        title: Text('회원가입'),
+      ),
+      body: new SingleChildScrollView(
           child: new Container(
             margin: new EdgeInsets.all(20.0),
             child: Center(
@@ -28,7 +30,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
         ),
-      ),
     );
   }
 
@@ -60,6 +61,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             onSaved: (String? value) {
               _signUpData.nickname(value!);
             }),
+        new SizedBox(height: 20.0),
         new TextFormField(
           keyboardType: TextInputType.emailAddress,
           autofocus: false,
@@ -100,13 +102,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: 16.0),
       child: ElevatedButton(
-        child: Text('Log In', style: TextStyle(color: Colors.white)),
+        child: Text('Sign Up!', style: TextStyle(color: Colors.white)),
         style: TextButton.styleFrom(
           //ElevatedButton.styleFrom 에는 backgroundColor 속성이 없음
           backgroundColor: Colors.lightBlue,
           shape: StadiumBorder(),
         ),
-        onPressed: renderSignUp(),
+        onPressed: ()=>renderSignUp(),
       ),
     );
   }
