@@ -10,7 +10,7 @@ class AuthScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (BuildContext context) => LogInController(auth: FirebaseAuth.instance),
+      create: (BuildContext context) => LogInController(auth:FirebaseAuth.instance),
       child: AuthScreenContent(),
     );
   }

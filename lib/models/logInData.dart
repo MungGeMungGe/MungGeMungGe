@@ -2,8 +2,8 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
 class LoginRequestData {
-  late String _email;
-  var _password;
+  String? _email;
+  dynamic? _password;
 
   setEmail(String email){
     _email = email;

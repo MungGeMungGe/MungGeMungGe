@@ -59,7 +59,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               OutlineInputBorder(borderRadius: BorderRadius.circular(32.0)),
             ),
             onSaved: (String? value) {
-              _signUpData.nickname(value!);
+              _signUpData.setNickname(value!);
             }),
         new SizedBox(height: 20.0),
         new TextFormField(
@@ -108,23 +108,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
           backgroundColor: Colors.lightBlue,
           shape: StadiumBorder(),
         ),
-        onPressed: ()=>renderSignUp(),
+        onPressed: () {
+          FocusScope.of(context)
+              .requestFocus(new FocusNode());
+          renderSignUp();
+        },
       ),
     );
   }
 
-
   renderSignUp() async {
-    try {
-      var result = await fAuth.createUserWithEmailAndPassword(
-          email: _signUpData.email, password: _signUpData.password);
-      if (result.user != null) {
-        result.user!.sendEmailVerification();
-        Navigator.pop(context);
+    if (_key.currentState!.validate()) {
+      _key.currentState!.save();
+      try {
+        var result = await fAuth.createUserWithEmailAndPassword(
+            email: _signUpData.email, password: _signUpData.password);
+        if (result.user != null) {
+          result.user!.sendEmailVerification();
+          Navigator.pop(context);
+        }
+      } on Exception catch (e) {
+        print(e);
       }
-    } on Exception catch (e) {
-      print(e);
     }
   }
-
 }

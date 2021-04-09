@@ -2,9 +2,9 @@ import 'package:crypto/crypto.dart';
 import 'dart:convert';
 
 class SignUpData {
-  late String _nickname;
-  late String _email;
-  var _password;
+  String? _nickname;
+  String? _email;
+  dynamic? _password;
 
   setNickname(String nickname){
     _nickname = nickname;
