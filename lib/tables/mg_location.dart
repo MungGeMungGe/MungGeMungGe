@@ -4,11 +4,11 @@ class MgLocation {
   final String detail; // 장소에 대한 설명
   final double latitude; // 위도
   final double longitude; // 경도
-  final String institution; // 관리기관명
-  final int capacity; // 최대 수용 가능 인원
-  final bool is_wifi; // 와이파이 여부
-  final bool is_charge; // 충천 가능 여부
-  final bool is_vantilation; // 환기 시설 여부
+  final String? institution; // 관리기관명
+  final int? capacity; // 최대 수용 가능 인원
+  final int? is_wifi; // 와이파이 여부
+  final int? is_charge; // 충천 가능 여부
+  final int? is_vantilation; // 환기 시설 여부
   final String place_class; // 장소구분, 실내인지 실외인지 등...
   final String address_jibun; // 지번 주소
   final String address_road; // 도로명 주소
@@ -19,11 +19,11 @@ class MgLocation {
     required this.detail,
     required this.latitude,
     required this.longitude,
-    required this.institution,
-    required this.capacity,
-    required this.is_wifi,
-    required this.is_charge,
-    required this.is_vantilation,
+    this.institution,
+    this.capacity,
+    this.is_wifi,
+    this.is_charge,
+    this.is_vantilation,
     required this.place_class,
     required this.address_jibun,
     required this.address_road
