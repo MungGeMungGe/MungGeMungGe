@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mung_ge_mung_ge/tables/mg_location.dart';
+import 'package:mung_ge_mung_ge/models/mgLocation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
