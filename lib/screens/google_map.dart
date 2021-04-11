@@ -1,8 +1,13 @@
+import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
 
 class MyGoogleMap extends StatefulWidget {
   @override
@@ -12,18 +17,15 @@ class MyGoogleMap extends StatefulWidget {
 class _MyGoogleMapState extends State<MyGoogleMap> {
   late Future<Position> _currentPosition;
   late Future<BitmapDescriptor> _bitmapDescriptor;
+  late Future<List<Map>> _locations;
   Map<MarkerId, Marker> _markers = {};
 
   @override
   void initState() {
     super.initState();
-    _currentPosition = getLocation();
+    _currentPosition = getCurrentPosition();
     _bitmapDescriptor = getSmokingAreaBitmap();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
+    _locations = getLocations();
   }
 
   Future<BitmapDescriptor> getSmokingAreaBitmap() async {
@@ -31,19 +33,30 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
     return bitmapDescriptor;
   }
 
-  Future<Position> getLocation() async {
+  Future<Position> getCurrentPosition() async {
     Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.low);
     return position;
   }
 
-  void _addMarker(LatLng position, String id, BitmapDescriptor descriptor) {
-    MarkerId markerId = MarkerId(id);
+  Future<List<Map>> getLocations() async {
+    String dbPath = join(await getDatabasesPath(), 'localdb');
+    ByteData data = await rootBundle.load(join('assets','database','localdb.sqlite'));
+    List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+    await File(dbPath).writeAsBytes(bytes);
+
+    Database database = await openDatabase(dbPath, version: 1);
+    List<Map> locations = await database.rawQuery('SELECT name, latitude, longitude FROM mg_location');
+    return locations;
+  }
+
+  void _addMarker(LatLng position, String name, BitmapDescriptor descriptor) {
+    MarkerId markerId = MarkerId(name);
     Marker marker = Marker(
       markerId: markerId,
       icon: descriptor,
       position: position,
       infoWindow: InfoWindow(
-        title: '등록된 흡연장소: $id',
+        title: '$name',
       ),
     );
     _markers[markerId] = marker;
@@ -58,18 +71,19 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
         ),
         body: Center(
           child: FutureBuilder(
-            future: Future.wait([_currentPosition, _bitmapDescriptor]),
+            future: Future.wait([_currentPosition, _bitmapDescriptor, _locations]),
             builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
               if (snapshot.hasData) {
                 List<dynamic> data = snapshot.data!;
                 Position currentPosition = data[0];
                 BitmapDescriptor bitmapDescriptor = data[1];
+                List<Map> locations = data[2];
+
                 LatLng currentLatlng = LatLng(currentPosition.latitude, currentPosition.longitude);
-                LatLng smokingArea1Latlng = LatLng(currentPosition.latitude + (Random().nextInt(5) * 0.001), currentPosition.longitude + (Random().nextInt(5) * 0.001));
-                LatLng smokingArea2Latlng = LatLng(currentPosition.latitude + (Random().nextInt(5) * 0.001), currentPosition.longitude + (Random().nextInt(5) * 0.001));
+                locations.forEach((element) {
+                  _addMarker(LatLng(element['latitude'], element['longitude']), element['name'], bitmapDescriptor);
+                });
                 _addMarker(currentLatlng, 'origin', BitmapDescriptor.defaultMarker);
-                _addMarker(smokingArea1Latlng, 'area1', bitmapDescriptor);
-                _addMarker(smokingArea2Latlng, 'area2', bitmapDescriptor);
 
                 return GoogleMap(
                   markers: Set<Marker>.of(_markers.values),
