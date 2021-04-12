@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mung_ge_mung_ge/models/mgFavorite.dart';
 import 'package:mung_ge_mung_ge/models/mgLocation.dart';
+import 'package:mung_ge_mung_ge/screens/location_list/components/location_item.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
@@ -26,11 +27,8 @@ class _LocationListState extends State<LocationList> {
       version: 1,
     );
 
-    // Table 생성
     try {
-      final Database db = await database;
-      await db.execute('CREATE TABLE mg_favorite(user_seq INT, location_seq INT)');
-      await db.execute('CREATE TABLE mg_location(seq INT PRIMARY KEY, name VARCHAR, detail VARCHAR, latitude FLOAT, longitude FLOAT, institution VARCHAR, capacity INT, is_wifi BOOLEAN, is_charge BOOLEAN, is_vantilation BOOLEAN, place_class VARCHAR, address_jibun VARCHAR, address_road VARCHAR)');
+      await _createTables(); // Table 생성
     } catch (err) { print(err); }
 
     try {
@@ -40,6 +38,7 @@ class _LocationListState extends State<LocationList> {
       });
     } catch (_) {}
 
+    // Location 별 Favorite init
     favorites.forEach((favorite) {
       for (int index = 0; index < locations.length; index++) {
         if (favorite.location_seq == locations[index].seq) {
@@ -48,6 +47,14 @@ class _LocationListState extends State<LocationList> {
         }
       }
     });
+  }
+
+  Future<void> _createTables() async {
+    try {
+      final Database db = await database;
+      await db.execute('CREATE TABLE mg_favorite(user_seq INT, location_seq INT)');
+      await db.execute('CREATE TABLE mg_location(seq INT PRIMARY KEY, name VARCHAR, detail VARCHAR, latitude FLOAT, longitude FLOAT, institution VARCHAR, capacity INT, is_wifi BOOLEAN, is_charge BOOLEAN, is_vantilation BOOLEAN, place_class VARCHAR, address_jibun VARCHAR, address_road VARCHAR)');
+    } catch (err) { print(err); }
   }
 
   Future<List<MgLocation>> _getLocations() async {
@@ -86,6 +93,7 @@ class _LocationListState extends State<LocationList> {
     });
   }
 
+  // 즐겨찾기 버튼 클릭
   Future<void> _clickFavorite(MgLocation location) async {
     if (location.favorite == true) {
       try {
@@ -127,38 +135,9 @@ class _LocationListState extends State<LocationList> {
           itemBuilder: (BuildContext context, int index) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: <Widget>[
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        locations[index].name,
-                        style: TextStyle(
-                          fontSize: 22.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Text(
-                        locations[index].address_road,
-                        style: TextStyle(
-                          fontSize: 16.0,
-                        ),
-                      ),
-                      if (locations[index].capacity != null)
-                        Text('${locations[index].capacity}명 수용 가능'),
-                      if (locations[index].institution != null)
-                        Text(locations[index].institution!),
-                    ],
-                  ),
-                  Container(
-                    child: GestureDetector(
-                      onTap: () => _clickFavorite(locations[index]),
-                      child: Icon(locations[index].favorite == true ? Icons.star : Icons.star_border),
-                    ),
-                  ),
-                ],
+              child: LocationItem(
+                location: locations[index],
+                clickFavorite: () => _clickFavorite(locations[index]),
               ),
             );
           },
