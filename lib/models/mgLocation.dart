@@ -12,6 +12,7 @@ class MgLocation {
   final String place_class; // 장소구분, 실내인지 실외인지 등...
   final String address_jibun; // 지번 주소
   final String address_road; // 도로명 주소
+  bool? favorite;
 
   MgLocation({
     required this.seq,
