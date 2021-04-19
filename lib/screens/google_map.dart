@@ -1,13 +1,14 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'dart:ui';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:mung_ge_mung_ge/utils/bitmap_descriptor_from_icon_data.dart';
+import 'package:mung_ge_mung_ge/screens/components/google_map_dialog.dart';
+import 'package:mung_ge_mung_ge/models/location.dart';
 
 class MyGoogleMap extends StatefulWidget {
   @override
@@ -29,7 +30,7 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
   }
 
   Future<BitmapDescriptor> getSmokingAreaBitmap() async {
-    BitmapDescriptor bitmapDescriptor = await MarkerGenerator(96).createBitmapDescriptorFromIconData(Icons.smoking_rooms, Colors.black, Colors.blueAccent, Colors.white);
+    BitmapDescriptor bitmapDescriptor = await BitmapDescriptorFromIconData(96).createBitmapDescriptorFromIconData(Icons.smoking_rooms, Colors.black, Colors.blueAccent, Colors.white);
     return bitmapDescriptor;
   }
 
@@ -39,24 +40,40 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
   }
 
   Future<List<Map>> getLocations() async {
+    // 데이터베이스파일은 assets에 등록된 파일을 복사하여 활용
     String dbPath = join(await getDatabasesPath(), 'localdb');
-    ByteData data = await rootBundle.load(join('assets','database','localdb.sqlite'));
+    ByteData data = await rootBundle.load(join('assets', 'database', 'localdb.sqlite'));
     List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     await File(dbPath).writeAsBytes(bytes);
 
     Database database = await openDatabase(dbPath, version: 1);
-    List<Map> locations = await database.rawQuery('SELECT name, latitude, longitude FROM mg_location');
+    List<Map> locations = await database.rawQuery('SELECT seq, name, latitude, longitude FROM mg_location');
     return locations;
   }
 
-  void _addMarker(LatLng position, String name, BitmapDescriptor descriptor) {
-    MarkerId markerId = MarkerId(name);
+  Future<void> _showDialog(BuildContext context, Location location) async {
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return GoogleMapDialog(location: location);
+      },
+    );
+  }
+
+  void _addMarker(BuildContext context, Location location, BitmapDescriptor descriptor) {
+    MarkerId markerId = MarkerId(location.name);
     Marker marker = Marker(
       markerId: markerId,
       icon: descriptor,
-      position: position,
+      position: location.latlng,
       infoWindow: InfoWindow(
-        title: '$name',
+        title: '${location.name}',
+        snippet: location.seq > 0 ? '상세보기' : null,
+        onTap: () {
+          if (location.seq > 0) {
+            _showDialog(context, location);
+          }
+        },
       ),
     );
     _markers[markerId] = marker;
@@ -80,10 +97,22 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
                 List<Map> locations = data[2];
 
                 LatLng currentLatlng = LatLng(currentPosition.latitude, currentPosition.longitude);
+                Location myLocation = Location(seq: 0, name: '내 위치', latlng: currentLatlng);
+                _addMarker(context, myLocation, BitmapDescriptor.defaultMarker); // 현재 사용자 위치 삽입
                 locations.forEach((element) {
-                  _addMarker(LatLng(element['latitude'], element['longitude']), element['name'], bitmapDescriptor);
-                });
-                _addMarker(currentLatlng, 'origin', BitmapDescriptor.defaultMarker);
+                  _addMarker(
+                    context,
+                    Location(
+                      seq: element['seq'],
+                      name: element['name'],
+                      latlng: LatLng(
+                        element['latitude'],
+                        element['longitude'],
+                      ),
+                    ),
+                    bitmapDescriptor,
+                  );
+                }); // 흡연장소 위치 삽입
 
                 return GoogleMap(
                   markers: Set<Marker>.of(_markers.values),
@@ -99,71 +128,5 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
         ),
       ),
     );
-  }
-}
-
-class MarkerGenerator {
-  final _markerSize;
-  double _circleStrokeWidth = 0;
-  double _circleOffset = 0;
-  double _outlineCircleWidth = 0;
-  double _fillCircleWidth = 0;
-  double _iconSize = 0;
-  double _iconOffset = 0;
-
-  MarkerGenerator(this._markerSize) {
-    _circleStrokeWidth = _markerSize / 10.0;
-    _circleOffset = _markerSize / 2;
-    _outlineCircleWidth = _circleOffset - (_circleStrokeWidth / 2);
-    _fillCircleWidth = _markerSize / 2;
-    final outlineCircleInnerWidth = _markerSize - (2 * _circleStrokeWidth);
-    _iconSize = sqrt(pow(outlineCircleInnerWidth, 2) / 2);
-    final rectDiagonal = sqrt(2 * pow(_markerSize, 2));
-    final circleDistanceToCorners = (rectDiagonal - outlineCircleInnerWidth) / 2;
-    _iconOffset = sqrt(pow(circleDistanceToCorners, 2) / 2);
-  }
-
-  Future<BitmapDescriptor> createBitmapDescriptorFromIconData(IconData iconData, Color iconColor, Color circleColor, Color backgroundColor) async {
-    final pictureRecorder = PictureRecorder();
-    final canvas = Canvas(pictureRecorder);
-
-    _paintCircleFill(canvas, backgroundColor);
-    _paintCircleStroke(canvas, circleColor);
-    _paintIcon(canvas, iconColor, iconData);
-
-    final picture = pictureRecorder.endRecording();
-    final image = await picture.toImage(_markerSize.round(), _markerSize.round());
-    final bytes = await image.toByteData(format: ImageByteFormat.png);
-
-    return BitmapDescriptor.fromBytes(bytes!.buffer.asUint8List());
-  }
-
-  void _paintCircleFill(Canvas canvas, Color color) {
-    final paint = Paint()
-      ..style = PaintingStyle.fill
-      ..color = color;
-    canvas.drawCircle(Offset(_circleOffset, _circleOffset), _fillCircleWidth, paint);
-  }
-
-  void _paintCircleStroke(Canvas canvas, Color color) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..color = color
-      ..strokeWidth = _circleStrokeWidth;
-    canvas.drawCircle(Offset(_circleOffset, _circleOffset), _outlineCircleWidth, paint);
-  }
-
-  void _paintIcon(Canvas canvas, Color color, IconData iconData) {
-    final textPainter = TextPainter(textDirection: TextDirection.ltr);
-    textPainter.text = TextSpan(
-        text: String.fromCharCode(iconData.codePoint),
-        style: TextStyle(
-          letterSpacing: 0.0,
-          fontSize: _iconSize,
-          fontFamily: iconData.fontFamily,
-          color: color,
-        ));
-    textPainter.layout();
-    textPainter.paint(canvas, Offset(_iconOffset, _iconOffset));
   }
 }
