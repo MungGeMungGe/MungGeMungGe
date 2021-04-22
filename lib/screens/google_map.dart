@@ -19,10 +19,11 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
   late Future<Position> _currentPosition;
   late Future<BitmapDescriptor> _bitmapDescriptor;
   late Future<List<Map>> _locations;
+  late Database database;
   Map<MarkerId, Marker> _markers = {};
 
   @override
-  void initState() {
+  initState() {
     super.initState();
     _currentPosition = getCurrentPosition();
     _bitmapDescriptor = getSmokingAreaBitmap();
@@ -42,25 +43,34 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
   Future<List<Map>> getLocations() async {
     // 데이터베이스파일은 assets에 등록된 파일을 복사하여 활용
     String dbPath = join(await getDatabasesPath(), 'localdb');
-    ByteData data = await rootBundle.load(join('assets', 'database', 'localdb.sqlite'));
-    List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
-    await File(dbPath).writeAsBytes(bytes);
+    if (!await databaseExists(dbPath)) {
+      ByteData data = await rootBundle.load(join('assets', 'database', 'localdb.sqlite'));
+      List<int> bytes = data.buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
+      await File(dbPath).writeAsBytes(bytes);
+    }
 
-    Database database = await openDatabase(dbPath, version: 1);
-    List<Map> locations = await database.rawQuery('SELECT seq, name, latitude, longitude FROM mg_location');
+    database = await openDatabase(dbPath, version: 1);
+    List<Map> locations = await database.rawQuery('select seq, name, latitude, longitude, (select count(*) from mg_smokecount where location_seq = l.seq) as count from mg_location l');
     return locations;
   }
 
-  Future<void> _showDialog(BuildContext context, Location location) async {
+  _showDialog(BuildContext context, Location location) async {
     await showDialog(
       context: context,
       builder: (context) {
-        return GoogleMapDialog(location: location);
+        return GoogleMapDialog(location: location, addSmokeCount: _addSmokeCount);
       },
     );
   }
 
-  void _addMarker(BuildContext context, Location location, BitmapDescriptor descriptor) {
+  _addSmokeCount(int locationSeq, String smokeDate, String smokeTime) async {
+    await database.rawInsert('insert into mg_smokecount(location_seq, smoke_date, smoke_time) values($locationSeq, "$smokeDate", "$smokeTime")');
+    setState(() {
+      _locations = getLocations();
+    });
+  }
+
+  _addMarker(BuildContext context, Location location, BitmapDescriptor descriptor) {
     MarkerId markerId = MarkerId(location.name);
     Marker marker = Marker(
       markerId: markerId,
@@ -97,7 +107,7 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
                 List<Map> locations = data[2];
 
                 LatLng currentLatlng = LatLng(currentPosition.latitude, currentPosition.longitude);
-                Location myLocation = Location(seq: 0, name: '내 위치', latlng: currentLatlng);
+                Location myLocation = Location(seq: 0, name: '내 위치', latlng: currentLatlng, count: 0);
                 _addMarker(context, myLocation, BitmapDescriptor.defaultMarker); // 현재 사용자 위치 삽입
                 locations.forEach((element) {
                   _addMarker(
@@ -109,6 +119,7 @@ class _MyGoogleMapState extends State<MyGoogleMap> {
                         element['latitude'],
                         element['longitude'],
                       ),
+                      count: element['count'],
                     ),
                     bitmapDescriptor,
                   );

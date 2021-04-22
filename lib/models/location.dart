@@ -4,10 +4,12 @@ class Location {
   int seq;
   String name;
   LatLng latlng;
+  int count;
 
   Location({
     required this.seq,
     required this.name,
     required this.latlng,
+    required this.count,
   });
 }
