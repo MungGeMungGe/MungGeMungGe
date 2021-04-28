@@ -18,6 +18,11 @@ class _LocationListState extends State<LocationList> {
   @override
   void initState() {
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     _initDatabase();
   }
 
@@ -27,34 +32,27 @@ class _LocationListState extends State<LocationList> {
       version: 1,
     );
 
+    List<MgLocation> _locations = [];
+    List<MgFavorite> _favorites = [];
     try {
-      await _createTables(); // Table 생성
-    } catch (err) { print(err); }
-
-    try {
-      setState(() async {
-        locations = await _getLocations();
-        favorites = await _getFavorites();
-      });
+      _locations = await _getLocations();
+      _favorites = await _getFavorites();
     } catch (_) {}
 
     // Location 별 Favorite init
-    favorites.forEach((favorite) {
-      for (int index = 0; index < locations.length; index++) {
-        if (favorite.location_seq == locations[index].seq) {
-          locations[index].favorite = true;
+    _favorites.forEach((favorite) {
+      for (int index = 0; index < _locations.length; index++) {
+        if (favorite.location_seq == _locations[index].seq) {
+          _locations[index].favorite = true;
           break;
         }
       }
     });
-  }
 
-  Future<void> _createTables() async {
-    try {
-      final Database db = await database;
-      await db.execute('CREATE TABLE mg_favorite(user_seq INT, location_seq INT)');
-      await db.execute('CREATE TABLE mg_location(seq INT PRIMARY KEY, name VARCHAR, detail VARCHAR, latitude FLOAT, longitude FLOAT, institution VARCHAR, capacity INT, is_wifi BOOLEAN, is_charge BOOLEAN, is_vantilation BOOLEAN, place_class VARCHAR, address_jibun VARCHAR, address_road VARCHAR)');
-    } catch (err) { print(err); }
+    setState(() {
+      locations = _locations;
+      favorites = _favorites;
+    });
   }
 
   Future<List<MgLocation>> _getLocations() async {
