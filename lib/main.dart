@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-// import 'package:mung_ge_mung_ge/screens/auth/auth_screen.dart';
-import 'package:mung_ge_mung_ge/screens/todo.dart';
+import 'package:mung_ge_mung_ge/screens/home.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,7 +16,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: TodoScreen(),
+      home: Home(),
     );
   }
 }
+
+
