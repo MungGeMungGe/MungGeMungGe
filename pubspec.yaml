@@ -9,10 +9,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  sqflite: ^2.0.0+3
+  path: ^1.8.0
   cupertino_icons: ^1.0.2
   geolocator: ^7.0.1
   google_maps_flutter: ^2.0.3
-  sqflite: ^2.0.0+3
+  intl: ^0.17.0
   firebase_auth: ^1.0.1
   google_sign_in: ^5.0.1
   sign_in_with_apple: ^3.0.0
