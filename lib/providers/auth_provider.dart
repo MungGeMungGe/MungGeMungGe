@@ -47,7 +47,6 @@ class LogInController with ChangeNotifier {
       }
     } catch (e) {
       print(e);
-    } finally {
     }
   }
 
@@ -61,7 +60,6 @@ class LogInController with ChangeNotifier {
       _logIn("apple", tokenCredential);
     } catch (e) {
       print(e);
-    } finally {
     }
   }
 

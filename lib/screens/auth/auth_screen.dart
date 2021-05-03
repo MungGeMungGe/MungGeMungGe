@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mung_ge_mung_ge/screens/auth/register_screen.dart';
+import 'package:mung_ge_mung_ge/screens/home_main.dart';
 import 'package:provider/provider.dart';
 import 'package:mung_ge_mung_ge/providers/auth_provider.dart';
 import 'package:mung_ge_mung_ge/models/logInData.dart';
@@ -145,18 +146,22 @@ class _AuthScreenContentState extends State<AuthScreenContent> {
           child: Image.asset("assets/auth/google.png"),
           onTap: () async{
             await _logInModel.signInWithGoogle();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => HomeMain()),
+            );
           },
         ),
         InkWell(
           child: Image.asset("assets/auth/apple.png"),
           onTap: () async{
             await _logInModel.signInWithApple();
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => HomeMain()),
+            );
           },
         ),
-        InkWell(
-          child: Icon(Icons.ac_unit),
-          onTap: (){},
-        )
       ],
     );
   }
@@ -167,7 +172,11 @@ class _AuthScreenContentState extends State<AuthScreenContent> {
       try {
         await fAuth.signInWithEmailAndPassword(
             email: _loginData.email, password: _loginData.password);
-      } on Exception catch (e) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => HomeMain()),
+        );
+    } on Exception catch (e) {
         print(e);
       }
     }
